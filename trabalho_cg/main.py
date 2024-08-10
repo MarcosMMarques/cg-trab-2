@@ -10,6 +10,7 @@ from draw import Draw
 from windowToViewport import *
 from clipping.cohen import *
 from clipping.weiler import *
+import numpy as np
 
 class Ui_MainWindow(QMainWindow):
     def __init__(self, MainWindow) -> None:
@@ -28,8 +29,9 @@ class Ui_MainWindow(QMainWindow):
         self.worldLinesCoordinates = []
         self.worldPolygonsCoordinates = []
 
-        self.main_window = Window(0, 1250, 0, 750)
-        self.viewport = Viewport(0, 1250, 0, 750)
+        self.main_window = Window(0, 600, 0, 550)
+        self.mouse_window = self.main_window
+        self.viewport = Viewport(0, 600, 0, 550)
         self.setupUi(MainWindow)
         self.main_window_widget = MainWindow
 
@@ -176,8 +178,8 @@ class Ui_MainWindow(QMainWindow):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("")
         MainWindow.resize(800, 600)
-        MainWindow.setMinimumSize(QtCore.QSize(1600, 900))
-        MainWindow.setMaximumSize(QtCore.QSize(1600, 900))
+        MainWindow.setMinimumSize(QtCore.QSize(1000, 630))
+        MainWindow.setMaximumSize(QtCore.QSize(1000, 630))
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
 
@@ -187,42 +189,25 @@ class Ui_MainWindow(QMainWindow):
         self.widget.setStyleSheet("background-color: black; border: 0.1px solid magenta")
         self.widget.setObjectName("widget")
         main_layout.addWidget(self.widget)
-        self.widget.setMaximumSize(QtCore.QSize(1250, 750))
-        self.widget.setMinimumSize(QtCore.QSize(1250, 750))
+        self.widget.setMaximumSize(QtCore.QSize(600, 550))
+        self.widget.setMinimumSize(QtCore.QSize(600, 550))
 
         controls_container = QWidget(self.centralwidget)
         controls_container.setMaximumWidth(300)
         controls_layout = QVBoxLayout(controls_container)
 
-        self.pushButton = QPushButton(controls_container)
-        self.pushButton.setObjectName("pushButton")
-        self.pushButton.setMinimumSize(85, 35)
-        self.pushButton.setMaximumSize(300, 35)
-        self.pushButton.clicked.connect(self.changelabeltext)
-        controls_layout.addWidget(self.pushButton)
+        self.erase_button = QPushButton(controls_container)
+        self.erase_button.setObjectName("erase_button")
+        self.erase_button.setMinimumSize(85, 35)
+        self.erase_button.setMaximumSize(300, 35)
+        self.erase_button.clicked.connect(self.eraseFunction)
+        controls_layout.addWidget(self.erase_button)
 
         # Spacer to fill the empty space
         spacer = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
         controls_layout.addItem(spacer)
 
-        # Scroll area for the form layout
-        # scroll_area = QScrollArea(controls_container)
-        # scroll_area.setWidgetResizable(True)
-        # scroll_area.setMaximumWidth(300)
         self.form_widget = QWidget()
-        # self.form_button_layout = QVBoxLayout(self.form_widget)
-        # self.form_line_layout = QVBoxLayout(self.form_widget)
-
-        #Form para poligono
-        # self.form_widget.hide()
-        # controls_layout.addWidget(scroll_area)
-
-
-
-        # self.label = QLabel(controls_container)
-        # self.label.setObjectName("label")
-        # self.label.setMaximumSize(300, 35)
-        # controls_layout.addWidget(self.label)
 
         # Adding new buttons
         self.button_ponto = QPushButton(controls_container)
@@ -246,11 +231,17 @@ class Ui_MainWindow(QMainWindow):
         self.button_poligono.clicked.connect(self.poligonoFunction)  # Connect the button to its function
         controls_layout.addWidget(self.button_poligono)
 
-        # Adding arrow buttons in a grid layout
         arrows_container = QWidget(controls_container)
         arrows_container.setMaximumWidth(300)
         arrows_container.setMaximumHeight(150)
         arrow_layout = QGridLayout(arrows_container)
+
+        self.rotate_left = QPushButton(arrows_container)
+        self.rotate_left.setText("↻")  # Símbolo de rotação para esquerda
+        self.rotate_left.setMinimumSize(85, 35)
+        self.rotate_left.setMaximumSize(300, 35)
+        self.rotate_left.clicked.connect(self.rotateLeftFunction)  # Connect to rotate left
+        arrow_layout.addWidget(self.rotate_left, 0, 0)
 
         self.arrow_up = QPushButton(arrows_container)
         self.arrow_up.setObjectName("arrow_up")
@@ -260,6 +251,13 @@ class Ui_MainWindow(QMainWindow):
         self.arrow_up.clicked.connect(self.arrowUpFunction)  # Connect the button to its function
         arrow_layout.addWidget(self.arrow_up, 0, 1)
 
+        self.rotate_right = QPushButton(arrows_container)
+        self.rotate_right.setText("↺")  # Símbolo de rotação para direita
+        self.rotate_right.setMinimumSize(85, 35)
+        self.rotate_right.setMaximumSize(300, 35)
+        self.rotate_right.clicked.connect(self.rotateRightFunction)  # Connect to rotate right
+        arrow_layout.addWidget(self.rotate_right, 0, 2)
+
         self.arrow_left = QPushButton(arrows_container)
         self.arrow_left.setObjectName("arrow_left")
         self.arrow_left.setText("←")
@@ -268,12 +266,14 @@ class Ui_MainWindow(QMainWindow):
         self.arrow_left.clicked.connect(self.arrowLeftFunction)  # Connect the button to its function
         arrow_layout.addWidget(self.arrow_left, 1, 0)
 
-        self.arrow_right = QPushButton(arrows_container)
-        self.arrow_right.setText("→")
-        self.arrow_right.setMinimumSize(85, 35)
-        self.arrow_right.setMaximumSize(300, 35)
-        self.arrow_right.clicked.connect(self.arrowRightFunction)  # Connect the button to its function
-        arrow_layout.addWidget(self.arrow_right, 1, 2)
+        # Salvar xml
+        self.save_xml = QPushButton(arrows_container)
+        self.save_xml.setObjectName("save_xml")
+        self.save_xml.setText(".xml")
+        self.save_xml.setMinimumSize(85, 35)
+        self.save_xml.setMaximumSize(300, 35)
+        self.save_xml.clicked.connect(self.saveXmlFunction)  # Connect the button to its function
+        arrow_layout.addWidget(self.save_xml, 1, 1)
 
         self.arrow_down = QPushButton(arrows_container)
         self.arrow_down.setObjectName("arrow_down")
@@ -282,6 +282,27 @@ class Ui_MainWindow(QMainWindow):
         self.arrow_down.setMaximumSize(300, 35)
         self.arrow_down.clicked.connect(self.arrowDownFunction)  # Connect the button to its function
         arrow_layout.addWidget(self.arrow_down, 2, 1)
+
+        self.arrow_right = QPushButton(arrows_container)
+        self.arrow_right.setText("→")
+        self.arrow_right.setMinimumSize(85, 35)
+        self.arrow_right.setMaximumSize(300, 35)
+        self.arrow_right.clicked.connect(self.arrowRightFunction)  # Connect the button to its function
+        arrow_layout.addWidget(self.arrow_right, 1, 2)
+
+        self.zoom_in = QPushButton(arrows_container)
+        self.zoom_in.setText("🔍+")  # Símbolo de zoom in
+        self.zoom_in.setMinimumSize(85, 35)
+        self.zoom_in.setMaximumSize(300, 35)
+        self.zoom_in.clicked.connect(self.zoomInFunction)  # Connect to zoom in
+        arrow_layout.addWidget(self.zoom_in, 2, 0)
+
+        self.zoom_out = QPushButton(arrows_container)
+        self.zoom_out.setText("🔍-")  # Símbolo de zoom out
+        self.zoom_out.setMinimumSize(85, 35)
+        self.zoom_out.setMaximumSize(300, 35)
+        self.zoom_out.clicked.connect(self.zoomOutFunction)  # Connect to zoom out
+        arrow_layout.addWidget(self.zoom_out, 2, 2)
 
         controls_layout.addWidget(arrows_container)
 
@@ -332,12 +353,89 @@ class Ui_MainWindow(QMainWindow):
             )
         )
 
+    def rotateLeftFunction(self):
+        self.main_window.rotate(-45)  # Rotaciona 10 graus para a esquerda
+        self.updateDrawing()
+
+    def rotateRightFunction(self):
+        self.main_window.rotate(45)  # Rotaciona 10 graus para a direita
+        self.updateDrawing()
+
+    def zoomInFunction(self):
+        self.main_window.zoom(0.9)  # Aumenta o zoom
+        self.updateDrawing()
+
+    def zoomOutFunction(self):
+        self.main_window.zoom(1.1)  # Diminui o zoom
+        self.updateDrawing()
+
+
+    def updateDrawing(self):
+        self.windowPointsCoordinates.clear()
+        self.windowLinesCoordinates.clear()
+        self.windowPolygonsCoordinates.clear()
+
+        for point in self.worldPointsCoordinates:
+            if (point.getPoint()[0] >= self.main_window.getXwMin() and point.getPoint()[0] <= self.main_window.getXwMax() and
+                point.getPoint()[1] >= self.main_window.getYwMin() and point.getPoint()[1] <= self.main_window.getYwMax()
+            ):
+                self.windowPointsCoordinates.append(point)
+                # print("Ponto: ", point.getPoint())
+
+        cohen = CohenSutherland(self.main_window)
+        for line in self.worldLinesCoordinates:
+            if (cohen.cohen_sutherland_clip(line.getLine()[0][0], line.getLine()[0][1],
+                line.getLine()[1][0], line.getLine()[1][1])):
+                self.windowLinesCoordinates.append(line)
+                # print("Linha: ", line.getLine())
+
+        for polygon in self.worldPolygonsCoordinates:
+            # print(polygon, self.main_window)
+            weiler = WeilerAtherton(self.main_window)
+            polygon_list = weiler.weiler_atherton(polygon)
+            if ( len(polygon_list.getPolygon()) != 0):
+                self.windowPolygonsCoordinates.append(polygon_list)
+                # print("Polygon: ", polygon.getPolygon())
+
+        conversor = WindowToViewportConversor()
+        self.widget.polygons.clear()
+        self.widget.lines.clear()
+        self.widget.points.clear()
+        self.viewPortPointsCoordinates.clear()
+        self.viewPortLinesCoordinates.clear()
+        self.viewPortPolygonsCoordinates.clear()
+
+        # Converte e redesenha os pontos
+        for point in self.windowPointsCoordinates:
+            convertedPoint = conversor.convertToViewport(
+                point, self.main_window, self.viewport)
+            self.viewPortPointsCoordinates.append(convertedPoint)
+            self.widget.drawPoint(convertedPoint)
+
+        # Converte e redesenha as linhas
+        for line in self.windowLinesCoordinates:
+            convertedLine = conversor.convertToViewport(
+                line, self.main_window, self.viewport)
+            self.viewPortLinesCoordinates.append(convertedLine)
+            self.widget.drawLine(convertedLine)
+
+        # Converte e redesenha os polígonos
+        for polygon in self.windowPolygonsCoordinates:
+            convertedPolygon = conversor.convertToViewport(
+                polygon, self.main_window, self.viewport)
+            self.viewPortPolygonsCoordinates.append(convertedPolygon)
+            self.widget.drawPolygon(convertedPolygon)
+
+        self.widget.update()
+
+
         # print(self.widget.width())
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "Trabalho de CG"))
-        self.pushButton.setText(_translate("MainWindow", "Save as xml"))
+        self.erase_button.setText(_translate("MainWindow", "🗑️"))
+        self.save_xml.setText(_translate("MainWindow", ".xml"))
         self.menuOptions.setTitle(_translate("MainWindow", "Options"))
         self.actionOpen.setText(_translate("MainWindow", "Open"))
         self.actionExit.setText(_translate("MainWindow", "Exit"))
@@ -403,24 +501,16 @@ class Ui_MainWindow(QMainWindow):
         if fileName:
             return fileName
 
-    def changelabeltext(self):
+    def saveXmlFunction(self):
         self.label.setText("Saved")
         pathFilename = self.saveFileDialog()
         xml = XmlWriter(pathFilename)
         xml.write(self.viewPortPointsCoordinates,
                   self.viewPortLinesCoordinates, self.viewPortPolygonsCoordinates)
-        self.pushButton.hide()
+        # self.pushButton.hide()
 
-    # Show the form
-    # def showPointForm(self):
-    #     self.form_widget_point.show()
-
-    # # Hide the form
-    # def hidePointForm(self):
-    #     self.form_widget_point.hide()
-
-    # def hidePoygonForm(self):
-    #     self.form_widget_polygon.hide()
+    def eraseFunction(self):
+        print("Lixeirinha!")
 
     # Confirm the point and process it
     def confirmPoint(self):
@@ -433,16 +523,6 @@ class Ui_MainWindow(QMainWindow):
         self.worldPointsCoordinates.append(point)
         self.widget.drawPoint(convertedPoint)
         self.point_dialog.accept()  # Close the dialog
-
-    #Line functions below
-    # def showLineForm(self):
-    #     self.form_widget_line.show()
-
-    # def hideLineForm(self):
-    #     self.form_widget_line.hide()
-
-    # def hidePolygonForm(self):
-    #     self.form_widget_polygon.hide()
 
     def confirmLine(self):
         x1 = float(self.line_input_x1.text())
@@ -487,81 +567,41 @@ class Ui_MainWindow(QMainWindow):
         self.createPolygonForm()
 
     def moveWindow(self, delta_x, delta_y):
-        # Atualiza as coordenadas da janela (Window)
-        self.main_window.setXwMin(self.main_window.getXwMin() + delta_x)
-        self.main_window.setXwMax(self.main_window.getXwMax() + delta_x)
-        self.main_window.setYwMin(self.main_window.getYwMin() + delta_y)
-        self.main_window.setYwMax(self.main_window.getYwMax() + delta_y)
+        # Matriz de Translação
+        T = np.array([
+            [1, 0, delta_x],
+            [0, 1, delta_y],
+            [0, 0, 1]
+        ])
+
+        # Coordenadas dos cantos da window antes da translação
+        coords = np.array([
+            [self.main_window.xwMin, self.main_window.xwMax, self.main_window.xwMin, self.main_window.xwMax],
+            [self.main_window.ywMin, self.main_window.ywMin, self.main_window.ywMax, self.main_window.ywMax],
+            [1, 1, 1, 1]
+        ])
+
+        # Aplicar a translação às coordenadas
+        new_coords = T @ coords
+
+        # Atualizar as coordenadas da window após a translação
+        self.main_window.xwMin, self.main_window.xwMax = np.min(new_coords[0, :]), np.max(new_coords[0, :])
+        self.main_window.ywMin, self.main_window.ywMax = np.min(new_coords[1, :]), np.max(new_coords[1, :])
         # print("Novas coordenadas mundo: ", self.main_window.getXwMin(), self.main_window.getXwMax(), self.main_window.getYwMin(), self.main_window.getYwMax())
 
-        # Limpa as coordenadas do viewport para redesenho
-        self.windowPointsCoordinates.clear()
-        self.windowLinesCoordinates.clear()
-        self.windowPolygonsCoordinates.clear()
+        self.updateDrawing()
 
-        for point in self.worldPointsCoordinates:
-            if (point.getPoint()[0] >= self.main_window.getXwMin() and point.getPoint()[0] <= self.main_window.getXwMax() and
-                point.getPoint()[1] >= self.main_window.getYwMin() and point.getPoint()[1] <= self.main_window.getYwMax()
-            ):
-                self.windowPointsCoordinates.append(point)
-                # print("Ponto: ", point.getPoint())
-
-        cohen = CohenSutherland(self.main_window)
-        for line in self.worldLinesCoordinates:
-            if (cohen.cohen_sutherland_clip(line.getLine()[0][0], line.getLine()[0][1],
-                line.getLine()[1][0], line.getLine()[1][1])):
-                self.windowLinesCoordinates.append(line)
-                # print("Linha: ", line.getLine())
-
-        for polygon in self.worldPolygonsCoordinates:
-            # print(polygon, self.main_window)
-            weiler = WeilerAtherton(self.main_window)
-            polygon_list = weiler.weiler_atherton(polygon)
-            if ( len(polygon_list.getPolygon()) != 0):
-                self.windowPolygonsCoordinates.append(polygon_list)
-                # print("Polygon: ", polygon.getPolygon())
-
-        conversor = WindowToViewportConversor()
-        self.widget.polygons.clear()
-        self.widget.lines.clear()
-        self.widget.points.clear()
-        self.viewPortPointsCoordinates.clear()
-        self.viewPortLinesCoordinates.clear()
-        self.viewPortPolygonsCoordinates.clear()
-
-        # Converte e redesenha os pontos
-        for point in self.windowPointsCoordinates:
-            convertedPoint = conversor.convertToViewport(
-                point, self.main_window, self.viewport)
-            self.viewPortPointsCoordinates.append(convertedPoint)
-            self.widget.drawPoint(convertedPoint)
-
-        # Converte e redesenha as linhas
-        for line in self.windowLinesCoordinates:
-            convertedLine = conversor.convertToViewport(
-                line, self.main_window, self.viewport)
-            self.viewPortLinesCoordinates.append(convertedLine)
-            self.widget.drawLine(convertedLine)
-
-        # Converte e redesenha os polígonos
-        for polygon in self.windowPolygonsCoordinates:
-            convertedPolygon = conversor.convertToViewport(
-                polygon, self.main_window, self.viewport)
-            self.viewPortPolygonsCoordinates.append(convertedPolygon)
-            self.widget.drawPolygon(convertedPolygon)
-
-        self.widget.update()
     def arrowUpFunction(self):
-        self.moveWindow(0, -10)
+        self.moveWindow(0, 10)
 
     def arrowDownFunction(self):
-        self.moveWindow(0, +10)
+        self.moveWindow(0, -10)
 
     def arrowLeftFunction(self):
-        self.moveWindow(+10, 0)
+        self.moveWindow(-10, 0)
 
     def arrowRightFunction(self):
-        self.moveWindow(-10, 0)
+        self.moveWindow(+10, 0)
 
 
 if __name__ == "__main__":
