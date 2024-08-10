@@ -103,6 +103,29 @@ class Window:
         # Atualizar as coordenadas da window após o zoom
         self.xwMin, self.xwMax = np.min(new_coords[0, :]), np.max(new_coords[0, :])
         self.ywMin, self.ywMax = np.min(new_coords[1, :]), np.max(new_coords[1, :])
+        
+    def moveWindow(self, delta_x, delta_y):
+        # Matriz de Translação
+        T = np.array([
+            [1, 0, delta_x],
+            [0, 1, delta_y],
+            [0, 0, 1]
+        ])
+
+        # Coordenadas dos cantos da window antes da translação
+        coords = np.array([
+            [self.xwMin, self.xwMax, self.xwMin, self.xwMax],
+            [self.ywMin, self.ywMin, self.ywMax, self.ywMax],
+            [1, 1, 1, 1]
+        ])
+
+        # Aplicar a translação às coordenadas
+        new_coords = T @ coords
+
+        # Atualizar as coordenadas da window após a translação
+        self.xwMin, self.xwMax = np.min(new_coords[0, :]), np.max(new_coords[0, :])
+        self.ywMin, self.ywMax = np.min(new_coords[1, :]), np.max(new_coords[1, :])
+        # print("Novas coordenadas mundo: ", self.main_window.getXwMin(), self.main_window.getXwMax(), self.main_window.getYwMin(), self.main_window.getYwMax())
 
 
     def setXwMin(self, xwMin):
