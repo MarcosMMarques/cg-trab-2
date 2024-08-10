@@ -1,6 +1,6 @@
 from sys import _current_frames
 from PyQt5 import QtCore, QtWidgets
-from PyQt5.QtWidgets import QDialog, QDialogButtonBox, QMainWindow, QFileDialog, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QMenuBar, QStatusBar, QGridLayout, QLineEdit, QSpacerItem, QSizePolicy, QScrollArea
+from PyQt5.QtWidgets import QDialog, QDialogButtonBox, QHeaderView, QMainWindow, QFileDialog, QTableWidget, QTableWidgetItem, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QMenuBar, QStatusBar, QGridLayout, QLineEdit, QSpacerItem, QSizePolicy, QScrollArea
 
 from geometry.geometry import Line, Point, Polygon
 from xmlReader import XmlReader
@@ -34,7 +34,7 @@ class Ui_MainWindow(QMainWindow):
         self.viewport = Viewport(0, 600, 0, 550)
         self.setupUi(MainWindow)
         self.main_window_widget = MainWindow
-
+        
 
     # Formulario do botao
     def createPointForm(self):
@@ -202,10 +202,47 @@ class Ui_MainWindow(QMainWindow):
         self.erase_button.setMaximumSize(300, 35)
         self.erase_button.clicked.connect(self.eraseFunction)
         controls_layout.addWidget(self.erase_button)
+        
+        self.edit_button = QPushButton(controls_container)
+        self.edit_button.setObjectName("edit_button")
+        self.edit_button.setMinimumSize(85, 35)
+        self.edit_button.setMaximumSize(300, 35)
+        self.edit_button.clicked.connect(self.eraseFunction)
+        controls_layout.addWidget(self.edit_button)
+
+        # Track Figures Scroll Area
+        self.track_figures_area = QScrollArea(controls_container)
+        self.track_figures_area.setWidgetResizable(True)
+        controls_layout.addWidget(self.track_figures_area)
+        
+        # Adding content to the scroll area
+        self.track_figures_content = QWidget()
+        self.track_figures_layout = QVBoxLayout(self.track_figures_content)
+        
+        # Create the table widget
+        self.table_widget = QTableWidget(self.track_figures_content)
+        self.table_widget.setColumnCount(3)  # 3 columns for ID, FIGURE, COORDINATES
+        self.table_widget.setHorizontalHeaderLabels(["ID", "Figure", "Coordinate"])
+        self.table_widget.setMinimumHeight(400)  # Ensure minimum height
+        
+        # Set dynamic width for the columns
+        header = self.table_widget.horizontalHeader()
+        header.setSectionResizeMode(0, QHeaderView.Stretch)  # ID column
+        header.setSectionResizeMode(1, QHeaderView.Stretch)  # FIGURE column
+        header.setSectionResizeMode(2, QHeaderView.Stretch)  # COORDINATES column
+        
+        # Alternatively, use QHeaderView.ResizeToContents for dynamic width based on content
+        # header.setSectionResizeMode(QHeaderView.ResizeToContents)
+        
+        # Add the table widget to the layout
+        self.track_figures_layout.addWidget(self.table_widget)
+        
+        # Set the content widget of the scroll area
+        self.track_figures_area.setWidget(self.track_figures_content)
 
         # Spacer to fill the empty space
-        spacer = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
-        controls_layout.addItem(spacer)
+        # spacer = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
+        # controls_layout.addItem(spacer)
 
         self.form_widget = QWidget()
 
@@ -353,23 +390,6 @@ class Ui_MainWindow(QMainWindow):
             )
         )
 
-    def rotateLeftFunction(self):
-        self.main_window.rotate(-45)  # Rotaciona 10 graus para a esquerda
-        self.updateDrawing()
-
-    def rotateRightFunction(self):
-        self.main_window.rotate(45)  # Rotaciona 10 graus para a direita
-        self.updateDrawing()
-
-    def zoomInFunction(self):
-        self.main_window.zoom(0.9)  # Aumenta o zoom
-        self.updateDrawing()
-
-    def zoomOutFunction(self):
-        self.main_window.zoom(1.1)  # Diminui o zoom
-        self.updateDrawing()
-
-
     def updateDrawing(self):
         self.windowPointsCoordinates.clear()
         self.windowLinesCoordinates.clear()
@@ -435,6 +455,7 @@ class Ui_MainWindow(QMainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "Trabalho de CG"))
         self.erase_button.setText(_translate("MainWindow", "🗑️"))
+        self.edit_button.setText(_translate("MainWindow", "📝"))
         self.save_xml.setText(_translate("MainWindow", ".xml"))
         self.menuOptions.setTitle(_translate("MainWindow", "Options"))
         self.actionOpen.setText(_translate("MainWindow", "Open"))
@@ -448,6 +469,26 @@ class Ui_MainWindow(QMainWindow):
         self.arrow_down.setText(_translate("MainWindow", "↓"))
         self.coordinates_label.setText(_translate("MainWindow", "Coordinates: (0, 0)"))
 
+    def populate_table(self):
+        # Combine the three lists into one
+        geometries = self.worldPointsCoordinates + self.worldLinesCoordinates + self.worldPolygonsCoordinates
+        
+        # Set the number of rows in the table
+        self.table_widget.setRowCount(len(geometries))\
+    
+        for i, geometry in enumerate(geometries):
+            # Populate the ID
+            id_item = QTableWidgetItem(str(geometry.getId()))
+            self.table_widget.setItem(i, 0, id_item)
+    
+            # Populate the Figure type
+            figure_item = QTableWidgetItem(geometry.getFigure())
+            self.table_widget.setItem(i, 1, figure_item)
+    
+            # Populate the Coordinates
+            coordinate_item = QTableWidgetItem(geometry.toString())
+            self.table_widget.setItem(i, 2, coordinate_item)
+
     def openFileNameDialog(self):
         options = QFileDialog.Options()
         fileName, _ = QFileDialog.getOpenFileName(
@@ -457,7 +498,6 @@ class Ui_MainWindow(QMainWindow):
 
     def exitProgram(self):
         self.main_window_widget.close()
-
 
     def openFile(self):
         filePath = self.openFileNameDialog()
