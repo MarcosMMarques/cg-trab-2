@@ -562,6 +562,7 @@ class Ui_MainWindow(QMainWindow):
             point, self.main_window, self.viewport)
         self.worldPointsCoordinates.append(point)
         self.widget.drawPoint(convertedPoint)
+        self.populate_table()
         self.point_dialog.accept()  # Close the dialog
 
     def confirmLine(self):
@@ -578,6 +579,7 @@ class Ui_MainWindow(QMainWindow):
             line, self.main_window, self.viewport)
         self.worldLinesCoordinates.append(line)
         self.widget.drawLine(convertedLine)
+        self.populate_table()
         self.line_dialog.accept()  # Close the dialog
 
     def confirmPolygon(self):
@@ -587,14 +589,13 @@ class Ui_MainWindow(QMainWindow):
             y_value = float(self.polygon_inputs_y[i].text())
             points.append(Point((x_value, y_value)))
         polygon = Polygon(*points)
-        self.worldPolygonsCoordinates.append(polygon)
         conversor = WindowToViewportConversor()
         convertedPolygon = conversor.convertToViewport(
             polygon, self.main_window, self.viewport)
         self.worldPolygonsCoordinates.append(polygon)
         self.widget.drawPolygon(convertedPolygon)
+        self.populate_table()
         self.polygon_dialog.accept()
-
 
     # Define the functions for the buttons below
     def pontoFunction(self):
@@ -606,42 +607,37 @@ class Ui_MainWindow(QMainWindow):
     def poligonoFunction(self):
         self.createPolygonForm()
 
-    def moveWindow(self, delta_x, delta_y):
-        # Matriz de Translação
-        T = np.array([
-            [1, 0, delta_x],
-            [0, 1, delta_y],
-            [0, 0, 1]
-        ])
-
-        # Coordenadas dos cantos da window antes da translação
-        coords = np.array([
-            [self.main_window.xwMin, self.main_window.xwMax, self.main_window.xwMin, self.main_window.xwMax],
-            [self.main_window.ywMin, self.main_window.ywMin, self.main_window.ywMax, self.main_window.ywMax],
-            [1, 1, 1, 1]
-        ])
-
-        # Aplicar a translação às coordenadas
-        new_coords = T @ coords
-
-        # Atualizar as coordenadas da window após a translação
-        self.main_window.xwMin, self.main_window.xwMax = np.min(new_coords[0, :]), np.max(new_coords[0, :])
-        self.main_window.ywMin, self.main_window.ywMax = np.min(new_coords[1, :]), np.max(new_coords[1, :])
-        # print("Novas coordenadas mundo: ", self.main_window.getXwMin(), self.main_window.getXwMax(), self.main_window.getYwMin(), self.main_window.getYwMax())
-
+    def arrowUpFunction(self):
+        self.main_window.moveWindow(0, 10)
+        self.updateDrawing()
+        
+    def arrowLeftFunction(self):
+        self.main_window.moveWindow(-10, 0)
+        self.updateDrawing()
+        
+    def arrowRightFunction(self):
+        self.main_window.moveWindow(+10, 0)
+        self.updateDrawing()
+        
+    def arrowDownFunction(self):
+        self.main_window.moveWindow(0, -10)
+        self.updateDrawing()
+    
+    def rotateLeftFunction(self):
+        self.main_window.rotate(-45)  # Rotaciona 10 graus para a esquerda
+        self.updateDrawing()
+        
+    def rotateRightFunction(self):
+        self.main_window.rotate(45)  # Rotaciona 10 graus para a direita
         self.updateDrawing()
 
-    def arrowUpFunction(self):
-        self.moveWindow(0, 10)
+    def zoomInFunction(self):
+        self.main_window.zoom(0.9)  # Aumenta o zoom
+        self.updateDrawing()
 
-    def arrowDownFunction(self):
-        self.moveWindow(0, -10)
-
-    def arrowLeftFunction(self):
-        self.moveWindow(-10, 0)
-
-    def arrowRightFunction(self):
-        self.moveWindow(+10, 0)
+    def zoomOutFunction(self):
+        self.main_window.zoom(1.1)  # Diminui o zoom
+        self.updateDrawing()
 
 
 if __name__ == "__main__":
