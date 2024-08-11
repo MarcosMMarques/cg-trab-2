@@ -1,7 +1,6 @@
 from sys import _current_frames
 from PyQt5 import QtCore, QtWidgets
-from PyQt5.QtWidgets import QDialog, QDialogButtonBox, QHeaderView, QMainWindow, QFileDialog, QTableWidget, QTableWidgetItem, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QMenuBar, QStatusBar, QGridLayout, QLineEdit, QSpacerItem, QSizePolicy, QScrollArea
-
+from PyQt5.QtWidgets import QAbstractItemView, QDialog, QDialogButtonBox, QHeaderView, QMainWindow, QFileDialog, QTableWidget, QTableWidgetItem, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QMenuBar, QStatusBar, QGridLayout, QLineEdit, QSpacerItem, QSizePolicy, QScrollArea
 from geometry.geometry import Line, Point, Polygon
 from xmlReader import XmlReader
 from viewport import Viewport
@@ -231,11 +230,17 @@ class Ui_MainWindow(QMainWindow):
         header.setSectionResizeMode(1, QHeaderView.Stretch)  # FIGURE column
         header.setSectionResizeMode(2, QHeaderView.Stretch)  # COORDINATES column
         
-        # Alternatively, use QHeaderView.ResizeToContents for dynamic width based on content
-        # header.setSectionResizeMode(QHeaderView.ResizeToContents)
+        # Make the table items non-editable
+        self.table_widget.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        
+        # Ensure that selecting a row selects all columns of that row
+        self.table_widget.setSelectionBehavior(QAbstractItemView.SelectRows)
         
         # Add the table widget to the layout
         self.track_figures_layout.addWidget(self.table_widget)
+        
+        # Connect the signal to the slot
+        self.table_widget.itemSelectionChanged.connect(self.on_row_selected)
         
         # Set the content widget of the scroll area
         self.track_figures_area.setWidget(self.track_figures_content)
@@ -550,7 +555,18 @@ class Ui_MainWindow(QMainWindow):
         # self.pushButton.hide()
 
     def eraseFunction(self):
-        print("Lixeirinha!")
+        selected_id = self.table_widget.item(self.selected_row, 0).text()
+        erased = False
+        if (self.table_widget.item(self.selected_row, 1).text() == "Point"):
+            erased = self.remove_geometry_by_id(self.worldPointsCoordinates,int(selected_id))
+        elif (self.table_widget.item(self.selected_row, 1).text() == "Line"):
+            erased = self.remove_geometry_by_id(self.worldLinesCoordinates,int(selected_id))
+        else:
+            erased = self.remove_geometry_by_id(self.worldPolygonsCoordinates,int(selected_id))
+        if erased :
+            self.table_widget.removeRow(self.selected_row)
+            self.selected_row = -1
+            self.updateDrawing()
 
     # Confirm the point and process it
     def confirmPoint(self):
@@ -639,6 +655,37 @@ class Ui_MainWindow(QMainWindow):
         self.main_window.zoom(1.1)  # Diminui o zoom
         self.updateDrawing()
 
+    def on_row_selected(self):
+        self.selected_items = self.table_widget.selectedItems()
+        if self.selected_items:
+            self.selected_row = self.selected_items[0].row()  # Get the row of the first selected item
+            column_count = self.table_widget.columnCount()
+    
+            # Retrieve and print the values of all columns in the selected row
+            row_values = []
+            for col in range(column_count):
+                cell_value = self.table_widget.item(self.selected_row, col).text()
+                row_values.append(cell_value)
+    
+            print(f"Selected Row: {self.selected_row}, Values: {row_values}")
+            # You can now use the row_values list as needed
+
+    def remove_geometry_by_id(self,geometry_array: List[Geometry], target_id: int):
+        low, high = 0, len(geometry_array) - 1
+        
+        while low <= high:
+            mid = (low + high) // 2
+            current_id = geometry_array[mid].id
+            
+            if current_id == target_id:
+                del geometry_array[mid]
+                return True  # Element found and removed
+            elif current_id < target_id:
+                low = mid + 1
+            else:
+                high = mid - 1
+        
+        return False  # Element not found
 
 if __name__ == "__main__":
     import sys
