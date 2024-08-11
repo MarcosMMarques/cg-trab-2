@@ -33,61 +33,72 @@ class Ui_MainWindow(QMainWindow):
         self.viewport = Viewport(0, 600, 0, 550)
         self.setupUi(MainWindow)
         self.main_window_widget = MainWindow
-        
+        self.selected_row = -1
+
 
     # Formulario do botao
-    def createPointForm(self):
+    def createPointForm(self, point=None):
         self.point_dialog = QDialog(self)
-        self.point_dialog.setWindowTitle("Add Point")
+        self.point_dialog.setWindowTitle("Edit Point" if point else "Add Point")
 
         form_layout = QVBoxLayout(self.point_dialog)
 
         self.label_x = QLabel("X:")
-        self.label_x.setMaximumSize(300, 35)
         self.input_x = QLineEdit()
-        self.input_x.setMaximumSize(300, 35)
         self.label_y = QLabel("Y:")
-        self.label_y.setMaximumSize(300, 35)
         self.input_y = QLineEdit()
-        self.input_y.setMaximumSize(300, 35)
+
+        if point:
+            self.input_x.setText(str(point.getPoint()[0]))
+            self.input_y.setText(str(point.getPoint()[1]))
+        else:
+            self.input_x.setText("")
+            self.input_y.setText("")
 
         form_layout.addWidget(self.label_x)
         form_layout.addWidget(self.input_x)
         form_layout.addWidget(self.label_y)
         form_layout.addWidget(self.input_y)
 
-        # Add confirm and cancel buttons
         button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        button_box.accepted.connect(self.confirmPoint)
+        self.point_returned = Point()
+        def execConfirmPoint(self):
+            self.point_returned = self.confirmPoint()
+        button_box.accepted.connect(lambda: execConfirmPoint(self))
         button_box.rejected.connect(self.point_dialog.reject)
         form_layout.addWidget(button_box)
 
         self.point_dialog.setLayout(form_layout)
-        self.point_dialog.exec_()  # Open the dialog as a modal
-
+        self.point_dialog.exec_()
+        return self.point_returned
     # Formulario da reta
-    def createLineForm(self):
+    def createLineForm(self, line=None):
         self.line_dialog = QDialog(self)
-        self.line_dialog.setWindowTitle("Add Line")
+        self.line_dialog.setWindowTitle("Edit Line" if line else "Add Line")
 
         form_layout = QVBoxLayout(self.line_dialog)
 
         self.line_label_x1 = QLabel("X1:")
-        self.line_label_x1.setMaximumSize(300, 35)
         self.line_input_x1 = QLineEdit()
-        self.line_input_x1.setMaximumSize(300, 35)
         self.line_label_y1 = QLabel("Y1:")
-        self.line_label_y1.setMaximumSize(300, 35)
         self.line_input_y1 = QLineEdit()
-        self.line_input_y1.setMaximumSize(300, 35)
         self.line_label_x2 = QLabel("X2:")
-        self.line_label_x2.setMaximumSize(300, 35)
         self.line_input_x2 = QLineEdit()
-        self.line_input_x2.setMaximumSize(300, 35)
         self.line_label_y2 = QLabel("Y2:")
-        self.line_label_y2.setMaximumSize(300, 35)
         self.line_input_y2 = QLineEdit()
-        self.line_input_y2.setMaximumSize(300, 35)
+
+        if line:
+            x1, y1 = line.getLine()[0]
+            x2, y2 = line.getLine()[1]
+            self.line_input_x1.setText(str(x1))
+            self.line_input_y1.setText(str(y1))
+            self.line_input_x2.setText(str(x2))
+            self.line_input_y2.setText(str(y2))
+        else:
+            self.line_input_x1.setText("")
+            self.line_input_y1.setText("")
+            self.line_input_x2.setText("")
+            self.line_input_y2.setText("")
 
         form_layout.addWidget(self.line_label_x1)
         form_layout.addWidget(self.line_input_x1)
@@ -98,24 +109,24 @@ class Ui_MainWindow(QMainWindow):
         form_layout.addWidget(self.line_label_y2)
         form_layout.addWidget(self.line_input_y2)
 
-        # Add confirm and cancel buttons
         button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        button_box.accepted.connect(self.confirmLine)
+        self.line_returned = Line(Point((0, 0)), Point((0, 0)))
+        def execConfirmLine(self):
+            self.line_returned = self.confirmLine()
+        button_box.accepted.connect(lambda: execConfirmLine(self))
         button_box.rejected.connect(self.line_dialog.reject)
         form_layout.addWidget(button_box)
 
         self.line_dialog.setLayout(form_layout)
-        self.line_dialog.exec_()  # Open the dialog as a modal
+        self.line_dialog.exec_()
+        return self.line_returned
 
     # Formulario do poligono
-    def createPolygonForm(self):
+    def createPolygonForm(self, polygon=None):
         self.polygon_dialog = QDialog(self)
-        self.polygon_dialog.setWindowTitle("Add Polygon")
+        self.polygon_dialog.setWindowTitle("Edit Polygon" if polygon else "Add Polygon")
 
-        # Main layout for the dialog
         main_layout = QVBoxLayout(self.polygon_dialog)
-
-        # Create a widget for the scroll area
         scroll_widget = QWidget()
         scroll_layout = QVBoxLayout(scroll_widget)
 
@@ -124,14 +135,17 @@ class Ui_MainWindow(QMainWindow):
         self.polygon_labels_y = []
         self.polygon_inputs_y = []
 
-        # Function to add a new point input
-        def addPoint():
+        def addPoint(x=None, y=None):
             point_index = len(self.polygon_labels_x) + 1
 
             label_x = QLabel(f"X{point_index}")
             input_x = QLineEdit()
+            if x is not None:
+                input_x.setText(str(x))
             label_y = QLabel(f"Y{point_index}")
             input_y = QLineEdit()
+            if y is not None:
+                input_y.setText(str(y))
 
             self.polygon_labels_x.append(label_x)
             self.polygon_inputs_x.append(input_x)
@@ -143,36 +157,38 @@ class Ui_MainWindow(QMainWindow):
             scroll_layout.addWidget(label_y)
             scroll_layout.addWidget(input_y)
 
-        # Add the first three points
-        for i in range(3):
-            addPoint()
+        if polygon:
+            for point in polygon.getPolygon():
+                x, y = point.getPoint()
+                addPoint(x, y)
+        else:
+            for _ in range(3):
+                addPoint()
 
-        # Create the scroll area
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
         scroll_area.setWidget(scroll_widget)
 
-        # Add the scroll area to the main layout
         main_layout.addWidget(scroll_area)
 
-        # Create a button box and add "+" button
         button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         add_point_button = QPushButton("+")
-        add_point_button.clicked.connect(addPoint)
-        button_box.accepted.connect(self.confirmPolygon)
+        add_point_button.clicked.connect(lambda: addPoint(None, None))
+        self.polygon_returned = Polygon(Point((0, 0)), Point((0, 0)), Point((0, 0)))
+        def execConfirmPolygon(self):
+            self.polygon_returned = self.confirmPolygon()
+        button_box.accepted.connect(lambda: execConfirmPolygon(self))
         button_box.rejected.connect(self.polygon_dialog.reject)
 
-        # Create a horizontal layout for the buttons
         button_layout = QHBoxLayout()
         button_layout.addWidget(button_box)
         button_layout.addWidget(add_point_button)
 
-        # Add the button layout to the main layout
         main_layout.addLayout(button_layout)
 
-        # Set the dialog layout
         self.polygon_dialog.setLayout(main_layout)
         self.polygon_dialog.exec_()
+        return self.polygon_returned
 
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("")
@@ -201,47 +217,47 @@ class Ui_MainWindow(QMainWindow):
         self.erase_button.setMaximumSize(300, 35)
         self.erase_button.clicked.connect(self.eraseFunction)
         controls_layout.addWidget(self.erase_button)
-        
+
         self.edit_button = QPushButton(controls_container)
         self.edit_button.setObjectName("edit_button")
         self.edit_button.setMinimumSize(85, 35)
         self.edit_button.setMaximumSize(300, 35)
-        self.edit_button.clicked.connect(self.eraseFunction)
+        self.edit_button.clicked.connect(self.editFigureFunction)
         controls_layout.addWidget(self.edit_button)
 
         # Track Figures Scroll Area
         self.track_figures_area = QScrollArea(controls_container)
         self.track_figures_area.setWidgetResizable(True)
         controls_layout.addWidget(self.track_figures_area)
-        
+
         # Adding content to the scroll area
         self.track_figures_content = QWidget()
         self.track_figures_layout = QVBoxLayout(self.track_figures_content)
-        
+
         # Create the table widget
         self.table_widget = QTableWidget(self.track_figures_content)
         self.table_widget.setColumnCount(3)  # 3 columns for ID, FIGURE, COORDINATES
         self.table_widget.setHorizontalHeaderLabels(["ID", "Figure", "Coordinate"])
         self.table_widget.setMinimumHeight(400)  # Ensure minimum height
-        
+
         # Set dynamic width for the columns
         header = self.table_widget.horizontalHeader()
         header.setSectionResizeMode(0, QHeaderView.Stretch)  # ID column
         header.setSectionResizeMode(1, QHeaderView.Stretch)  # FIGURE column
         header.setSectionResizeMode(2, QHeaderView.Stretch)  # COORDINATES column
-        
+
         # Make the table items non-editable
         self.table_widget.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        
+
         # Ensure that selecting a row selects all columns of that row
         self.table_widget.setSelectionBehavior(QAbstractItemView.SelectRows)
-        
+
         # Add the table widget to the layout
         self.track_figures_layout.addWidget(self.table_widget)
-        
+
         # Connect the signal to the slot
-        self.table_widget.itemSelectionChanged.connect(self.on_row_selected)
-        
+        self.table_widget.itemSelectionChanged.connect(self.onRowSelected)
+
         # Set the content widget of the scroll area
         self.track_figures_area.setWidget(self.track_figures_content)
 
@@ -474,24 +490,24 @@ class Ui_MainWindow(QMainWindow):
         self.arrow_down.setText(_translate("MainWindow", "↓"))
         self.coordinates_label.setText(_translate("MainWindow", "Coordinates: (0, 0)"))
 
-    def populate_table(self):
+    def populateTable(self):
         # Combine the three lists into one
         geometries = self.worldPointsCoordinates + self.worldLinesCoordinates + self.worldPolygonsCoordinates
-        
+
         # Set the number of rows in the table
         self.table_widget.setRowCount(len(geometries))\
-    
+
         for i, geometry in enumerate(geometries):
             # Populate the ID
             id_item = QTableWidgetItem(str(geometry.getId()))
             self.table_widget.setItem(i, 0, id_item)
-    
+
             # Populate the Figure type
             figure_item = QTableWidgetItem(geometry.getFigure())
             self.table_widget.setItem(i, 1, figure_item)
-    
+
             # Populate the Coordinates
-            coordinate_item = QTableWidgetItem(geometry.toString())
+            coordinate_item = QTableWidgetItem(geometry.__str__())
             self.table_widget.setItem(i, 2, coordinate_item)
 
     def openFileNameDialog(self):
@@ -555,18 +571,56 @@ class Ui_MainWindow(QMainWindow):
         # self.pushButton.hide()
 
     def eraseFunction(self):
+        if self.selected_row == -1: return
         selected_id = self.table_widget.item(self.selected_row, 0).text()
         erased = False
         if (self.table_widget.item(self.selected_row, 1).text() == "Point"):
-            erased = self.remove_geometry_by_id(self.worldPointsCoordinates,int(selected_id))
+            erased = self.removeGeometryById(self.worldPointsCoordinates,int(selected_id))
         elif (self.table_widget.item(self.selected_row, 1).text() == "Line"):
-            erased = self.remove_geometry_by_id(self.worldLinesCoordinates,int(selected_id))
+            erased = self.removeGeometryById(self.worldLinesCoordinates,int(selected_id))
         else:
-            erased = self.remove_geometry_by_id(self.worldPolygonsCoordinates,int(selected_id))
+            erased = self.removeGeometryById(self.worldPolygonsCoordinates,int(selected_id))
         if erased :
             self.table_widget.removeRow(self.selected_row)
             self.selected_row = -1
             self.updateDrawing()
+
+    def editFigureFunction(self):
+        if self.selected_row == -1: return
+        selected_id = self.table_widget.item(self.selected_row, 0).text()
+        index = None
+        if (self.table_widget.item(self.selected_row, 1).text() == "Point"):
+            index = self.findFigureById(self.worldPointsCoordinates,int(selected_id))
+            new_point = self.createPointForm(self.worldPointsCoordinates[index])
+            if new_point.getPoint() is not None:
+                old_id = self.worldPointsCoordinates[index].getId()
+                self.worldPointsCoordinates[index] = new_point
+                self.worldPointsCoordinates[index].setId(old_id)
+                self.worldPointsCoordinates.pop()
+                self.table_widget.removeRow(self.table_widget.rowCount() - 1)
+                self.table_widget.item(self.selected_row, 2).setText(self.worldPointsCoordinates[index].__str__())
+        elif (self.table_widget.item(self.selected_row, 1).text() == "Line"):
+            index = self.findFigureById(self.worldLinesCoordinates,int(selected_id))
+            new_line = self.createLineForm(self.worldLinesCoordinates[index])
+            if new_line is not None:
+                old_id = self.worldLinesCoordinates[index].getId()
+                self.worldLinesCoordinates[index] = new_line
+                self.worldLinesCoordinates[index].setId(old_id)
+                self.worldLinesCoordinates.pop()
+                self.table_widget.removeRow(self.table_widget.rowCount() - 1)
+                self.table_widget.item(self.selected_row, 2).setText(self.worldLinesCoordinates[index].__str__())
+        else:
+            index = self.findFigureById(self.worldPolygonsCoordinates,int(selected_id))
+            new_polygon = self.createPolygonForm(self.worldPolygonsCoordinates[index])
+            if new_polygon is not None:
+                old_id = self.worldPolygonsCoordinates[index].getId()
+                self.worldPolygonsCoordinates[index] = new_polygon
+                self.worldPolygonsCoordinates[index].setId(old_id)
+                self.worldPolygonsCoordinates.pop()
+                self.table_widget.removeRow(self.table_widget.rowCount() - 1)
+                self.table_widget.item(self.selected_row, 2).setText(self.worldPolygonsCoordinates[index].__str__())
+        self.updateDrawing()
+
 
     # Confirm the point and process it
     def confirmPoint(self):
@@ -578,8 +632,9 @@ class Ui_MainWindow(QMainWindow):
             point, self.main_window, self.viewport)
         self.worldPointsCoordinates.append(point)
         self.widget.drawPoint(convertedPoint)
-        self.populate_table()
+        self.populateTable()
         self.point_dialog.accept()  # Close the dialog
+        return point
 
     def confirmLine(self):
         x1 = float(self.line_input_x1.text())
@@ -595,8 +650,9 @@ class Ui_MainWindow(QMainWindow):
             line, self.main_window, self.viewport)
         self.worldLinesCoordinates.append(line)
         self.widget.drawLine(convertedLine)
-        self.populate_table()
+        self.populateTable()
         self.line_dialog.accept()  # Close the dialog
+        return line
 
     def confirmPolygon(self):
         points = []
@@ -610,8 +666,9 @@ class Ui_MainWindow(QMainWindow):
             polygon, self.main_window, self.viewport)
         self.worldPolygonsCoordinates.append(polygon)
         self.widget.drawPolygon(convertedPolygon)
-        self.populate_table()
+        self.populateTable()
         self.polygon_dialog.accept()
+        return polygon
 
     # Define the functions for the buttons below
     def pontoFunction(self):
@@ -626,23 +683,23 @@ class Ui_MainWindow(QMainWindow):
     def arrowUpFunction(self):
         self.main_window.moveWindow(0, 10)
         self.updateDrawing()
-        
+
     def arrowLeftFunction(self):
         self.main_window.moveWindow(-10, 0)
         self.updateDrawing()
-        
+
     def arrowRightFunction(self):
         self.main_window.moveWindow(+10, 0)
         self.updateDrawing()
-        
+
     def arrowDownFunction(self):
         self.main_window.moveWindow(0, -10)
         self.updateDrawing()
-    
+
     def rotateLeftFunction(self):
         self.main_window.rotate(-45)  # Rotaciona 10 graus para a esquerda
         self.updateDrawing()
-        
+
     def rotateRightFunction(self):
         self.main_window.rotate(45)  # Rotaciona 10 graus para a direita
         self.updateDrawing()
@@ -655,28 +712,44 @@ class Ui_MainWindow(QMainWindow):
         self.main_window.zoom(1.1)  # Diminui o zoom
         self.updateDrawing()
 
-    def on_row_selected(self):
+    def onRowSelected(self):
         self.selected_items = self.table_widget.selectedItems()
         if self.selected_items:
             self.selected_row = self.selected_items[0].row()  # Get the row of the first selected item
             column_count = self.table_widget.columnCount()
-    
+
             # Retrieve and print the values of all columns in the selected row
             row_values = []
             for col in range(column_count):
                 cell_value = self.table_widget.item(self.selected_row, col).text()
                 row_values.append(cell_value)
-    
-            print(f"Selected Row: {self.selected_row}, Values: {row_values}")
+
+            # print(f"Selected Row: {self.selected_row}, Values: {row_values}")
             # You can now use the row_values list as needed
 
-    def remove_geometry_by_id(self,geometry_array: List[Geometry], target_id: int):
+    def findFigureById(self, geometry_array: List[Geometry], target_id: int) -> int:
+        left, right = 0, len(geometry_array) - 1
+
+        while left <= right:
+            mid = (left + right) // 2
+            mid_id = geometry_array[mid].getId()  # Assuming getId() method exists
+
+            if mid_id == target_id:
+                return mid
+            elif mid_id < target_id:
+                left = mid + 1
+            else:
+                right = mid - 1
+
+        return -1  # Return None if the target_id is not found
+
+    def removeGeometryById(self,geometry_array: List[Geometry], target_id: int):
         low, high = 0, len(geometry_array) - 1
-        
+
         while low <= high:
             mid = (low + high) // 2
             current_id = geometry_array[mid].id
-            
+
             if current_id == target_id:
                 del geometry_array[mid]
                 return True  # Element found and removed
@@ -684,7 +757,7 @@ class Ui_MainWindow(QMainWindow):
                 low = mid + 1
             else:
                 high = mid - 1
-        
+
         return False  # Element not found
 
 if __name__ == "__main__":

@@ -1,4 +1,5 @@
 from typing import Tuple
+from typing_extensions import Optional, overload
 
 
 class Geometry:
@@ -6,6 +7,9 @@ class Geometry:
 
     def __init__(self):
         self.id = Geometry._generate_id()
+
+    def setId(self, new_id: int):
+        self.id = new_id
 
     @classmethod
     def _generate_id(cls) -> int:
@@ -18,41 +22,61 @@ class Geometry:
     def getFigure(self) -> str:
         return self.__class__.__name__
 
-    def toString(self) -> str:
+    def __str__(self) -> str:
         raise NotImplementedError("Subclasses should implement this method")
 
 
 class Point(Geometry):
-    def __init__(self, point: Tuple[int, int]):
-        super().__init__()
-        self.point = point
+    def __init__(self, point: Optional[Tuple[int, int]] = None):
+        if point is not None:
+            super().__init__()
+            self.point = point
+            return
+        self.point = None
 
-    def getPoint(self):
+    def setPoint(self, new_point: Tuple[int, int]):
+        self.point = new_point
+
+    def getPoint(self) -> Optional[Tuple[int, int]]:
         return self.point
 
-    def toString(self) -> str:
-        return f"({self.point[0]},{self.point[1]})"
+    def __str__(self) -> str:
+            if self.point is None:
+                return "Point is not set"
+            return f"({self.point[0]},{self.point[1]})"
 
 
 class Line(Geometry):
-    def __init__(self, point1: Point, point2: Point):
-        super().__init__()
+    def __init__(self, point1: Optional[Point] = None, point2: Optional[Point] = None):
+        if point1 is not None or point2 is not None:
+            super().__init__()
+            self.line = [point1, point2]
+
+    def setLine(self, point1: Point, point2: Point):
         self.line = [point1, point2]
 
     def getLine(self):
         return self.line
 
-    def toString(self) -> str:
-        return f"{Point(self.line[0]).toString()}, {Point(self.line[1]).toString()}"
+    def __str__(self) -> str:
+        if self.line[0] is None or self.line[1] is None:
+            return "Line is not set"
+        return f"{Point(self.line[0]).__str__()}, {Point(self.line[1]).__str__()}"
 
 
 class Polygon(Geometry):
-    def __init__(self, *points: Point):
-        super().__init__()
+    def __init__(self, *points: Optional[Point]):
+            if points:
+                super().__init__()
+                self.polygon = list(points)
+
+    def setPolygon(self, *points: Point):
         self.polygon = list(points)
 
-    def getPolygon(self) -> list[Point]:
+    def getPolygon(self):
         return self.polygon
 
-    def toString(self) -> str:
-        return ", ".join(point.toString() for point in self.polygon)
+    def __str__(self) -> str:
+        if self.polygon is None:
+            return "Polygon is not set"
+        return ", " . join(point.__str__() for point in self.polygon)
