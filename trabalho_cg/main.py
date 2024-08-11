@@ -3,6 +3,7 @@ from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtWidgets import QAbstractItemView, QDialog, QDialogButtonBox, QHeaderView, QMainWindow, QFileDialog, QTableWidget, QTableWidgetItem, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QMenuBar, QStatusBar, QGridLayout, QLineEdit, QSpacerItem, QSizePolicy, QScrollArea
 from geometry.geometry import Line, Point, Polygon
 from xmlReader import XmlReader
+from xmlWriter import XmlWriter
 from viewport import Viewport
 from window import Window
 from draw import Draw
@@ -10,6 +11,8 @@ from windowToViewport import *
 from clipping.cohen import *
 from clipping.weiler import *
 import numpy as np
+
+# TODO : XmlReader, Rotação e ajuste de coordenadas
 
 class Ui_MainWindow(QMainWindow):
     def __init__(self, MainWindow) -> None:
@@ -40,7 +43,7 @@ class Ui_MainWindow(QMainWindow):
     def createPointForm(self, point=None):
         self.point_dialog = QDialog(self)
         self.point_dialog.setWindowTitle("Edit Point" if point else "Add Point")
-
+        self.flag_updated = False
         form_layout = QVBoxLayout(self.point_dialog)
 
         self.label_x = QLabel("X:")
@@ -63,6 +66,7 @@ class Ui_MainWindow(QMainWindow):
         button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         self.point_returned = Point()
         def execConfirmPoint(self):
+            self.flag_updated = True
             self.point_returned = self.confirmPoint()
         button_box.accepted.connect(lambda: execConfirmPoint(self))
         button_box.rejected.connect(self.point_dialog.reject)
@@ -70,9 +74,11 @@ class Ui_MainWindow(QMainWindow):
 
         self.point_dialog.setLayout(form_layout)
         self.point_dialog.exec_()
-        return self.point_returned
+        return self.point_returned, self.flag_updated
+
     # Formulario da reta
     def createLineForm(self, line=None):
+        self.flag_updated = False
         self.line_dialog = QDialog(self)
         self.line_dialog.setWindowTitle("Edit Line" if line else "Add Line")
 
@@ -110,8 +116,9 @@ class Ui_MainWindow(QMainWindow):
         form_layout.addWidget(self.line_input_y2)
 
         button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        self.line_returned = Line(Point((0, 0)), Point((0, 0)))
+        self.line_returned = line
         def execConfirmLine(self):
+            self.flag_updated = True
             self.line_returned = self.confirmLine()
         button_box.accepted.connect(lambda: execConfirmLine(self))
         button_box.rejected.connect(self.line_dialog.reject)
@@ -119,13 +126,13 @@ class Ui_MainWindow(QMainWindow):
 
         self.line_dialog.setLayout(form_layout)
         self.line_dialog.exec_()
-        return self.line_returned
+        return self.line_returned, self.flag_updated
 
     # Formulario do poligono
     def createPolygonForm(self, polygon=None):
         self.polygon_dialog = QDialog(self)
         self.polygon_dialog.setWindowTitle("Edit Polygon" if polygon else "Add Polygon")
-
+        self.flag_updated = False
         main_layout = QVBoxLayout(self.polygon_dialog)
         scroll_widget = QWidget()
         scroll_layout = QVBoxLayout(scroll_widget)
@@ -174,9 +181,10 @@ class Ui_MainWindow(QMainWindow):
         button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         add_point_button = QPushButton("+")
         add_point_button.clicked.connect(lambda: addPoint(None, None))
-        self.polygon_returned = Polygon(Point((0, 0)), Point((0, 0)), Point((0, 0)))
+        self.polygon_returned = polygon
         def execConfirmPolygon(self):
             self.polygon_returned = self.confirmPolygon()
+            self.flag_updated = True
         button_box.accepted.connect(lambda: execConfirmPolygon(self))
         button_box.rejected.connect(self.polygon_dialog.reject)
 
@@ -188,7 +196,35 @@ class Ui_MainWindow(QMainWindow):
 
         self.polygon_dialog.setLayout(main_layout)
         self.polygon_dialog.exec_()
-        return self.polygon_returned
+        return self.polygon_returned, self.flag_updated
+
+    #Xml form
+    def createXmlForm(self):
+        self.point_dialog = QDialog(self)
+        self.point_dialog.setWindowTitle("Exportar Figuras")
+
+        form_layout = QVBoxLayout(self.point_dialog)
+
+        btn_export_viewport = QPushButton("Exportar figuras na ViewPort", self.point_dialog)
+        btn_export_world = QPushButton("Exportar figuras do mundo", self.point_dialog)
+
+        btn_export_viewport.clicked.connect(self.exportFiguresInViewPort)
+        btn_export_world.clicked.connect(self.exportFiguresInWorld)
+
+        form_layout.addWidget(btn_export_viewport)
+        form_layout.addWidget(btn_export_world)
+
+        self.point_dialog.setLayout(form_layout)
+        self.point_dialog.exec_()
+
+    # Exemplos de métodos para exportação (implemente conforme necessário)
+    def exportFiguresInViewPort(self):
+        self.saveXmlFunction(self.viewPortPointsCoordinates,
+                  self.viewPortLinesCoordinates, self.viewPortPolygonsCoordinates)
+
+    def exportFiguresInWorld(self):
+        self.saveXmlFunction(self.worldPointsCoordinates,
+                  self.worldLinesCoordinates, self.worldPolygonsCoordinates)
 
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("")
@@ -244,7 +280,6 @@ class Ui_MainWindow(QMainWindow):
         header = self.table_widget.horizontalHeader()
         header.setSectionResizeMode(0, QHeaderView.Stretch)  # ID column
         header.setSectionResizeMode(1, QHeaderView.Stretch)  # FIGURE column
-        header.setSectionResizeMode(2, QHeaderView.Stretch)  # COORDINATES column
 
         # Make the table items non-editable
         self.table_widget.setEditTriggers(QAbstractItemView.NoEditTriggers)
@@ -252,8 +287,13 @@ class Ui_MainWindow(QMainWindow):
         # Ensure that selecting a row selects all columns of that row
         self.table_widget.setSelectionBehavior(QAbstractItemView.SelectRows)
 
-        # Add the table widget to the layout
-        self.track_figures_layout.addWidget(self.table_widget)
+        # Create a QScrollArea to contain the table_widget
+        self.table_scroll_area = QScrollArea(self.track_figures_content)
+        self.table_scroll_area.setWidgetResizable(True)  # Make the scroll area resizable
+        self.table_scroll_area.setWidget(self.table_widget)  # Set the table_widget as the widget for the scroll area
+
+        # Add the scroll area to the layout instead of the table widget directly
+        self.track_figures_layout.addWidget(self.table_scroll_area)
 
         # Connect the signal to the slot
         self.table_widget.itemSelectionChanged.connect(self.onRowSelected)
@@ -330,7 +370,7 @@ class Ui_MainWindow(QMainWindow):
         self.save_xml.setText(".xml")
         self.save_xml.setMinimumSize(85, 35)
         self.save_xml.setMaximumSize(300, 35)
-        self.save_xml.clicked.connect(self.saveXmlFunction)  # Connect the button to its function
+        self.save_xml.clicked.connect(self.xmlFunction)  # Connect the button to its function
         arrow_layout.addWidget(self.save_xml, 1, 1)
 
         self.arrow_down = QPushButton(arrows_container)
@@ -421,22 +461,18 @@ class Ui_MainWindow(QMainWindow):
                 point.getPoint()[1] >= self.main_window.getYwMin() and point.getPoint()[1] <= self.main_window.getYwMax()
             ):
                 self.windowPointsCoordinates.append(point)
-                # print("Ponto: ", point.getPoint())
 
         cohen = CohenSutherland(self.main_window)
         for line in self.worldLinesCoordinates:
             if (cohen.cohen_sutherland_clip(line.getLine()[0][0], line.getLine()[0][1],
                 line.getLine()[1][0], line.getLine()[1][1])):
                 self.windowLinesCoordinates.append(line)
-                # print("Linha: ", line.getLine())
 
         for polygon in self.worldPolygonsCoordinates:
-            # print(polygon, self.main_window)
             weiler = WeilerAtherton(self.main_window)
             polygon_list = weiler.weiler_atherton(polygon)
             if ( len(polygon_list.getPolygon()) != 0):
                 self.windowPolygonsCoordinates.append(polygon_list)
-                # print("Polygon: ", polygon.getPolygon())
 
         conversor = WindowToViewportConversor()
         self.widget.polygons.clear()
@@ -470,7 +506,6 @@ class Ui_MainWindow(QMainWindow):
         self.widget.update()
 
 
-        # print(self.widget.width())
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
@@ -562,12 +597,10 @@ class Ui_MainWindow(QMainWindow):
         if fileName:
             return fileName
 
-    def saveXmlFunction(self):
-        self.label.setText("Saved")
+    def saveXmlFunction(self, points_vector, lines_vector, polygons_vector):
         pathFilename = self.saveFileDialog()
         xml = XmlWriter(pathFilename)
-        xml.write(self.viewPortPointsCoordinates,
-                  self.viewPortLinesCoordinates, self.viewPortPolygonsCoordinates)
+        xml.write(points_vector, lines_vector, polygons_vector)
         # self.pushButton.hide()
 
     def eraseFunction(self):
@@ -591,8 +624,9 @@ class Ui_MainWindow(QMainWindow):
         index = None
         if (self.table_widget.item(self.selected_row, 1).text() == "Point"):
             index = self.findFigureById(self.worldPointsCoordinates,int(selected_id))
-            new_point = self.createPointForm(self.worldPointsCoordinates[index])
-            if new_point.getPoint() is not None:
+            new_point, flag_updated = self.createPointForm(self.worldPointsCoordinates[index])
+            if not flag_updated: return
+            if new_point.getPoint() is not None and self.table_widget.item(self.selected_row, 2) is not None:
                 old_id = self.worldPointsCoordinates[index].getId()
                 self.worldPointsCoordinates[index] = new_point
                 self.worldPointsCoordinates[index].setId(old_id)
@@ -601,24 +635,26 @@ class Ui_MainWindow(QMainWindow):
                 self.table_widget.item(self.selected_row, 2).setText(self.worldPointsCoordinates[index].__str__())
         elif (self.table_widget.item(self.selected_row, 1).text() == "Line"):
             index = self.findFigureById(self.worldLinesCoordinates,int(selected_id))
-            new_line = self.createLineForm(self.worldLinesCoordinates[index])
-            if new_line is not None:
+            new_line, flag_updated = self.createLineForm(self.worldLinesCoordinates[index])
+            if not flag_updated: return
+            if type(new_line) == Line and new_line.getLine() is not None and self.table_widget.item(self.selected_row, 2) is not None:
                 old_id = self.worldLinesCoordinates[index].getId()
                 self.worldLinesCoordinates[index] = new_line
                 self.worldLinesCoordinates[index].setId(old_id)
                 self.worldLinesCoordinates.pop()
                 self.table_widget.removeRow(self.table_widget.rowCount() - 1)
-                self.table_widget.item(self.selected_row, 2).setText(self.worldLinesCoordinates[index].__str__())
+                self.table_widget.item(self.selected_row, 2).setText(str(self.worldLinesCoordinates[index]))
         else:
             index = self.findFigureById(self.worldPolygonsCoordinates,int(selected_id))
-            new_polygon = self.createPolygonForm(self.worldPolygonsCoordinates[index])
-            if new_polygon is not None:
+            new_polygon, flag_updated = self.createPolygonForm(self.worldPolygonsCoordinates[index])
+            if not flag_updated: return
+            if new_polygon.getPolygon() is not None and self.table_widget.item(self.selected_row, 2) is not None:
                 old_id = self.worldPolygonsCoordinates[index].getId()
                 self.worldPolygonsCoordinates[index] = new_polygon
                 self.worldPolygonsCoordinates[index].setId(old_id)
                 self.worldPolygonsCoordinates.pop()
                 self.table_widget.removeRow(self.table_widget.rowCount() - 1)
-                self.table_widget.item(self.selected_row, 2).setText(self.worldPolygonsCoordinates[index].__str__())
+            self.table_widget.item(self.selected_row, 2).setText(self.worldPolygonsCoordinates[index].__str__())
         self.updateDrawing()
 
 
@@ -631,6 +667,7 @@ class Ui_MainWindow(QMainWindow):
         convertedPoint = conversor.convertToViewport(
             point, self.main_window, self.viewport)
         self.worldPointsCoordinates.append(point)
+        self.viewPortPointsCoordinates.append(convertedPoint)
         self.widget.drawPoint(convertedPoint)
         self.populateTable()
         self.point_dialog.accept()  # Close the dialog
@@ -649,6 +686,7 @@ class Ui_MainWindow(QMainWindow):
         convertedLine = conversor.convertToViewport(
             line, self.main_window, self.viewport)
         self.worldLinesCoordinates.append(line)
+        self.viewPortLinesCoordinates.append(convertedLine)
         self.widget.drawLine(convertedLine)
         self.populateTable()
         self.line_dialog.accept()  # Close the dialog
@@ -665,6 +703,7 @@ class Ui_MainWindow(QMainWindow):
         convertedPolygon = conversor.convertToViewport(
             polygon, self.main_window, self.viewport)
         self.worldPolygonsCoordinates.append(polygon)
+        self.viewPortPolygonsCoordinates.append(convertedPolygon)
         self.widget.drawPolygon(convertedPolygon)
         self.populateTable()
         self.polygon_dialog.accept()
@@ -673,6 +712,9 @@ class Ui_MainWindow(QMainWindow):
     # Define the functions for the buttons below
     def pontoFunction(self):
         self.createPointForm()
+
+    def xmlFunction(self):
+        self.createXmlForm()
 
     def linhaFunction(self):
         self.createLineForm()
@@ -718,13 +760,11 @@ class Ui_MainWindow(QMainWindow):
             self.selected_row = self.selected_items[0].row()  # Get the row of the first selected item
             column_count = self.table_widget.columnCount()
 
-            # Retrieve and print the values of all columns in the selected row
             row_values = []
             for col in range(column_count):
                 cell_value = self.table_widget.item(self.selected_row, col).text()
                 row_values.append(cell_value)
 
-            # print(f"Selected Row: {self.selected_row}, Values: {row_values}")
             # You can now use the row_values list as needed
 
     def findFigureById(self, geometry_array: List[Geometry], target_id: int) -> int:
