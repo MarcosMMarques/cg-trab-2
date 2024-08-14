@@ -38,11 +38,13 @@ class Draw(QWidget):
         qp.setPen(pen)
 
         for point in self.points:
-            qp.drawPoint(*(point.getPoint()))
+            qp.drawPoint(int(point.getPoint()[0]), int(point.getPoint()[1]))
 
         for line in self.lines:
             p1, p2 = line.getLine()
-            qp.drawLine(*p1, *p2)
+            x1, y1 = p1
+            x2, y2 = p2
+            qp.drawLine(int(x1), int(y1), int(x2), int(y2))
 
         for polygon in self.polygons:
             currentPolygon = []
@@ -53,33 +55,6 @@ class Draw(QWidget):
                     int(point.getPoint()[1])
                 )))
             qp.drawPolygon(QPolygonF(currentPolygon))
-
-
-        # penColor2 = QColor(255, 0, 0)
-        # pen2 = QPen(penColor2)
-        # pen2.setWidth(1)
-        # qp.setPen(pen2)
-        # margin = []
-
-        # l1 = Line((self.viewport.getXvMin() - 1, self.viewport.getYvMin() - 1),
-        #           (self.viewport.getXvMin() - 1, self.viewport.getYvMax() - 1))
-        # margin.append(l1)
-
-        # l2 = Line((self.viewport.getXvMin() - 1, self.viewport.getYvMin() - 1),
-        #           (self.viewport.getXvMax() - 1, self.viewport.getYvMin() - 1))
-        # margin.append(l2)
-
-        # l3 = Line((self.viewport.getXvMax() - 1, self.viewport.getYvMin() - 1),
-        #           (self.viewport.getXvMax() - 1, self.viewport.getYvMax() - 1))
-        # margin.append(l3)
-
-        # l4 = Line((self.viewport.getXvMin() - 1, self.viewport.getYvMax() - 1),
-        #           (self.viewport.getXvMax() - 1, self.viewport.getYvMax() - 1))
-        # margin.append(l4)
-
-        # for line in margin:
-        #     p1, p2 = line.getLine()
-        #     qp.drawLine(*p1, *p2)
 
         self.qp = qp
         qp.end()
