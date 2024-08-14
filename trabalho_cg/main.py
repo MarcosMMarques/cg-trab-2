@@ -32,6 +32,10 @@ class Ui_MainWindow(QMainWindow):
         self.worldPolygonsCoordinates = []
 
         self.main_window = Window(0, 600, 0, 550)
+        self.x_min_default = 0
+        self.x_max_default = 600
+        self.y_min_default = 0
+        self.y_max_default = 550
         self.mouse_window = self.main_window
         self.viewport = Viewport(0, 600, 0, 550)
         self.setupUi(MainWindow)
@@ -565,6 +569,10 @@ class Ui_MainWindow(QMainWindow):
         self.worldFilePointsCoordinates = xmlReader.getPontos()
         self.worldFileLinesCoordinates = xmlReader.getRetas()
         self.worldFilePolygonsCoordinates = xmlReader.getPoligonos()
+        self.x_min_default = self.main_window.getXwMin()
+        self.x_max_default = self.main_window.getXwMax()
+        self.y_min_default = self.main_window.getYwMin()
+        self.y_max_default = self.main_window.getYwMax()
 
         for point in self.worldFilePolygonsCoordinates:
             convertedPoint = conversor.convertToViewport(
@@ -735,8 +743,12 @@ class Ui_MainWindow(QMainWindow):
         self.updateDrawing()
 
     def arrowDownFunction(self):
-        self.main_window.moveWindow(0, -10)
+        self.main_window.moveWindow(0, 10)
         self.updateDrawing()
+        
+    def resetInitialPosition(self):
+        self.main_window.reset_position(self.x_min_default, self.y_min_default,
+            self.x_max_default, self.y_max_default)
 
     def rotateLeftFunction(self):
         self.main_window.rotate(-45)  # Rotaciona 10 graus para a esquerda

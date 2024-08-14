@@ -127,6 +127,11 @@ class Window:
         self.ywMin, self.ywMax = np.min(new_coords[1, :]), np.max(new_coords[1, :])
         # print("Novas coordenadas mundo: ", self.main_window.getXwMin(), self.main_window.getXwMax(), self.main_window.getYwMin(), self.main_window.getYwMax())
 
+    def reset_position(self, xMin, yMin, xMax, yMax):
+        self.setXwMax(xMax)
+        self.setYwMax(yMax)
+        self.setXwMin(xMin)
+        self.setYwMin(yMin)
 
     def setXwMin(self, xwMin):
         self.xwMin = xwMin
