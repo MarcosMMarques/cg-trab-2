@@ -451,7 +451,7 @@ class Ui_MainWindow(QMainWindow):
         self.widget.newPoint.connect(
             lambda p: self.coordinates_label.setText(
                 'Coordinates: ( %d : %d )' % conversor.convertToViewport(
-                    Point((p.x(), p.y())), self.main_window, self.viewport).getPoint()
+                    Point((p.x(), p.y())), self.main_window, self.viewport, True).getPoint()
             )
         )
 
@@ -731,7 +731,7 @@ class Ui_MainWindow(QMainWindow):
         self.createPolygonForm()
 
     def arrowUpFunction(self):
-        self.main_window.moveWindow(0, 10)
+        self.main_window.moveWindow(0, -10)
         self.updateDrawing()
 
     def arrowLeftFunction(self):
