@@ -26,7 +26,7 @@ class Window:
         # Transladar para que o centro da janela seja a origem
         T_to_origin = np.array([
             [1, 0, -cx],
-            [0, 1, -cy],    
+            [0, 1, -cy],
             [0, 0, 1]
         ])
 
@@ -103,7 +103,7 @@ class Window:
         # Atualizar as coordenadas da window após o zoom
         self.xwMin, self.xwMax = np.min(new_coords[0, :]), np.max(new_coords[0, :])
         self.ywMin, self.ywMax = np.min(new_coords[1, :]), np.max(new_coords[1, :])
-        
+
     def moveWindow(self, delta_x, delta_y):
         # Matriz de Translação
         T = np.array([
@@ -156,3 +156,13 @@ class Window:
 
     def getYwMax(self):
         return self.ywMax
+
+    def setAngle(self, angle):
+        self.angle += angle
+        # if (self.angle >= 360):
+        #     self.angle = self.angle % 360
+        # if (self.angle <= -360):
+        #     self.angle = self.angle % -360
+
+    def getAngle(self):
+        return self.angle

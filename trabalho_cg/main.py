@@ -762,11 +762,59 @@ class Ui_MainWindow(QMainWindow):
         self.updateDrawing()
 
     def rotateLeftFunction(self):
-        self.main_window.rotate(-45)  # Rotaciona 10 graus para a esquerda
+        self.main_window.setAngle(-45)
+        print("Angulo: ", self.main_window.getAngle())
+        for point in self.worldPointsCoordinates:
+            x,y = point.rotate(self.main_window, point.getPoint()[0], point.getPoint()[1])
+            new_point = (int(x),int(y))
+            point.setPoint(new_point)
+
+        for line in self.worldLinesCoordinates:
+            new_line = []
+            x,y = line.rotate(self.main_window, line.getLine()[0][0], line.getLine()[0][1])
+            new_point = (int(x),int(y))
+            new_line.append(new_point)
+            x,y = line.rotate(self.main_window, line.getLine()[1][0], line.getLine()[1][1])
+            new_point = (int(x),int(y))
+            new_line.append(new_point)
+            line.setLine(new_line[0], new_line[1])
+
+        for polygon in self.worldPolygonsCoordinates:
+            new_polygon = []
+            for point in polygon.getPolygon():
+                x,y = polygon.rotate(self.main_window, point.getPoint()[0], point.getPoint()[1])
+                new_point = Point((int(x),int(y)))
+                new_polygon.append(new_point)
+            polygon.setPolygon(*new_polygon)
+
         self.updateDrawing()
 
     def rotateRightFunction(self):
-        self.main_window.rotate(45)  # Rotaciona 10 graus para a direita
+        self.main_window.setAngle(45)
+        print("Angulo: ", self.main_window.getAngle())
+        for point in self.worldPointsCoordinates:
+            x,y = point.rotate(self.main_window, point.getPoint()[0], point.getPoint()[1])
+            new_point = (int(x),int(y))
+            point.setPoint(new_point)
+
+        for line in self.worldLinesCoordinates:
+            new_line = []
+            x,y = line.rotate(self.main_window, line.getLine()[0][0], line.getLine()[0][1])
+            new_point = (int(x),int(y))
+            new_line.append(new_point)
+            x,y = line.rotate(self.main_window, line.getLine()[1][0], line.getLine()[1][1])
+            new_point = (int(x),int(y))
+            new_line.append(new_point)
+            line.setLine(new_line[0], new_line[1])
+
+        for polygon in self.worldPolygonsCoordinates:
+            new_polygon = []
+            for point in polygon.getPolygon():
+                x,y = polygon.rotate(self.main_window, point.getPoint()[0], point.getPoint()[1])
+                new_point = Point((int(x),int(y)))
+                new_polygon.append(new_point)
+            polygon.setPolygon(*new_polygon)
+
         self.updateDrawing()
 
     def zoomInFunction(self):

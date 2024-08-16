@@ -1,4 +1,6 @@
 from typing import Tuple
+from xml.etree.ElementTree import PI
+import numpy as np
 from typing_extensions import Optional, overload
 
 
@@ -7,6 +9,7 @@ class Geometry:
 
     def __init__(self):
         self.id = Geometry._generate_id()
+        self.angle = 0
 
     def setId(self, new_id: int):
         self.id = new_id
@@ -24,6 +27,43 @@ class Geometry:
 
     def __str__(self) -> str:
         raise NotImplementedError("Subclasses should implement this method")
+
+    def rotate(self, window, x, y):
+        center = window.getCenter()
+        if window.angle == 0: angle_rad = 2 * np.pi
+        else : angle_rad = np.radians(window.angle)  # Convert angle to radians
+        print("Radianos: ", angle_rad)
+        return self.apply_rotation(angle_rad, center[0], center[1], x, y)
+
+
+    def apply_rotation(self, angle, cx, cy, x , y):
+        # Translation to origin
+        T_to_origin = np.array([
+            [1, 0, -cx],
+            [0, 1, -cy],
+            [0, 0, 1]
+        ])
+
+        # Rotation matrix
+        R = np.array([
+            [np.cos(angle), -np.sin(angle), 0],
+            [np.sin(angle), np.cos(angle), 0],
+            [0, 0, 1]
+        ])
+
+        # Translation back to original position
+        T_back = np.array([
+            [1, 0, cx],
+            [0, 1, cy],
+            [0, 0, 1]
+        ])
+
+        # Total transformation matrix
+        M = T_back @ R @ T_to_origin
+
+        coords = np.array([x, y, 1])
+        new_coords = M @ coords
+        return new_coords[0], new_coords[1]
 
 
 class Point(Geometry):
