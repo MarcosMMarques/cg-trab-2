@@ -28,10 +28,9 @@ class Geometry:
     def __str__(self) -> str:
         raise NotImplementedError("Subclasses should implement this method")
 
-    def rotate(self, window, x, y):
+    def rotate(self, window, angle, x, y):
         center = window.getCenter()
-        if window.angle == 0: angle_rad = 2 * np.pi
-        else : angle_rad = np.radians(window.angle)  # Convert angle to radians
+        angle_rad = np.radians(angle)  # Convert angle to radians
         print("Radianos: ", angle_rad)
         return self.apply_rotation(angle_rad, center[0], center[1], x, y)
 
