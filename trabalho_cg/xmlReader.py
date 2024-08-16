@@ -17,20 +17,20 @@ class XmlReader:
         self.polygonList = []
 
         for wmin in self.root.findall("./window/wmin"):
-            self.window.setXwMin(float(wmin.attrib.get('x')))
-            self.window.setYwMin(float(wmin.attrib.get('y')))
+            self.window.setXwMin(int(float(wmin.attrib.get('x'))))
+            self.window.setYwMin(int(float(wmin.attrib.get('y'))))
 
         for wmax in self.root.findall("./window/wmax"):
-            self.window.setXwMax(float(wmax.attrib.get('x')))
-            self.window.setYwMax(float(wmax.attrib.get('y')))
+            self.window.setXwMax(int(float(wmax.attrib.get('x'))))
+            self.window.setYwMax(int(float(wmax.attrib.get('y'))))
 
         for vmin in self.root.findall("./viewport/vpmin"):
-            self.viewport.setXvMin(float(vmin.attrib.get('x')))
-            self.viewport.setYvMin(float(vmin.attrib.get('y')))
+            self.viewport.setXvMin(int(float(vmin.attrib.get('x'))))
+            self.viewport.setYvMin(int(float(vmin.attrib.get('y'))))
 
         for vmax in self.root.findall("./viewport/vpmax"):
-            self.viewport.setXvMax(float(vmax.attrib.get('x')))
-            self.viewport.setYvMax(float(vmax.attrib.get('y')))
+            self.viewport.setXvMax(int(float(vmax.attrib.get('x'))))
+            self.viewport.setYvMax(int(float(vmax.attrib.get('y'))))
 
         for ponto in self.root.findall("./ponto"):
             x0 = float(ponto.attrib.get('x'))
@@ -42,7 +42,7 @@ class XmlReader:
             for ponto in reta:
                 x0 = float(ponto.attrib.get('x'))
                 y0 = float(ponto.attrib.get('y'))
-                retaAtual.append(Point((x0, y0)))
+                retaAtual.append(tuple((x0, y0)))
             self.lineList.append(Line(retaAtual[0], retaAtual[1]))
 
         for poligono in self.root.findall("./poligono"):

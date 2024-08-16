@@ -6,60 +6,11 @@ class Window:
         self.xwMax = xwMax
         self.ywMin = ywMin
         self.ywMax = ywMax
-        self.angle = 0
 
     def getCenter(self):
         cx = (self.xwMax - self.xwMin) / 2
         cy = (self.ywMax - self.ywMin) / 2
         return (cx, cy)
-
-    def rotate(self, angle):
-        self.angle += angle
-        if (self.angle >= 360):
-            self.angle = self.angle % 360
-        if (self.angle <= -360):
-            self.angle = (self.angle * -1) % 360
-        center = self.getCenter()
-        self.apply_rotation(self.angle, center[0], center[1])
-
-    def apply_rotation(self, angle, cx, cy):
-        # Transladar para que o centro da janela seja a origem
-        T_to_origin = np.array([
-            [1, 0, -cx],
-            [0, 1, -cy],    
-            [0, 0, 1]
-        ])
-
-        # Matriz de rotação
-        R = np.array([
-            [np.cos(angle), -np.sin(angle), 0],
-            [np.sin(angle), np.cos(angle), 0],
-            [0, 0, 1]
-        ])
-
-        # Transladar de volta à posição original
-        T_back = np.array([
-            [1, 0, cx],
-            [0, 1, cy],
-            [0, 0, 1]
-        ])
-
-        # Matriz de transformação total
-        M = T_back @ R @ T_to_origin
-
-        # Aplicar a matriz de transformação às coordenadas da self
-        coords = np.array([
-            [self.xwMin, self.xwMax, self.xwMin, self.xwMax],
-            [self.ywMin, self.ywMin, self.ywMax, self.ywMax],
-            [1, 1, 1, 1]
-        ])
-
-        new_coords = M @ coords
-
-        # Atualizar as coordenadas da self
-        self.xwMin, self.xwMax = np.min(new_coords[0, :]), np.max(new_coords[0, :])
-        self.ywMin, self.ywMax = np.min(new_coords[1, :]), np.max(new_coords[1, :])
-
 
     def zoom(self, factor):
         # Calcula o centro da window
@@ -103,7 +54,7 @@ class Window:
         # Atualizar as coordenadas da window após o zoom
         self.xwMin, self.xwMax = np.min(new_coords[0, :]), np.max(new_coords[0, :])
         self.ywMin, self.ywMax = np.min(new_coords[1, :]), np.max(new_coords[1, :])
-        
+
     def moveWindow(self, delta_x, delta_y):
         # Matriz de Translação
         T = np.array([
@@ -125,8 +76,12 @@ class Window:
         # Atualizar as coordenadas da window após a translação
         self.xwMin, self.xwMax = np.min(new_coords[0, :]), np.max(new_coords[0, :])
         self.ywMin, self.ywMax = np.min(new_coords[1, :]), np.max(new_coords[1, :])
-        # print("Novas coordenadas mundo: ", self.main_window.getXwMin(), self.main_window.getXwMax(), self.main_window.getYwMin(), self.main_window.getYwMax())
 
+    def reset_position(self, xMin, yMin, xMax, yMax):
+        self.setXwMax(xMax)
+        self.setYwMax(yMax)
+        self.setXwMin(xMin)
+        self.setYwMin(yMin)
 
     def setXwMin(self, xwMin):
         self.xwMin = xwMin
