@@ -45,6 +45,12 @@ class Point(Geometry):
                 return "Point is not set"
             return f"({self.point[0]},{self.point[1]})"
 
+    def __iter__(self):
+            if self.point is not None:
+                yield from self.point
+            else:
+                raise ValueError("Point is not set")
+
 
 class Line(Geometry):
     def __init__(self, point1: Optional[Point] = None, point2: Optional[Point] = None):
@@ -66,7 +72,8 @@ class Line(Geometry):
 
 class Polygon(Geometry):
     def __init__(self, *points: Optional[Point]):
-            if points:
+            self.polygon = []
+            if points and len(points) > 0:
                 super().__init__()
                 self.polygon = list(points)
 
@@ -75,6 +82,9 @@ class Polygon(Geometry):
 
     def getPolygon(self):
         return self.polygon
+
+    def __len__(self):
+        return len(self.polygon)
 
     def __str__(self) -> str:
         if self.polygon is None:

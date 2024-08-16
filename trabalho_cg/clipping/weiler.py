@@ -2,10 +2,10 @@ from geometry.geometry import Polygon, Point
 from window import Window
 
 class WeilerAtherton:
-    
+
     def __init__(self, window: Window):
         self.window = window
-    
+
     def is_inside(self, p, edge):
         return (edge[1][0] - edge[0][0]) * (p.getPoint()[1] - edge[0][1]) > (edge[1][1] - edge[0][1]) * (p.getPoint()[0] - edge[0][0])
 
@@ -29,15 +29,12 @@ class WeilerAtherton:
 
     def weiler_atherton(self, subject_polygon: Polygon):
         output_list = subject_polygon.getPolygon()
-
-        # Define the clipping window as a list of edges (pair of points)
         window_edges = [
-            [(self.window.getXwMin(), self.window.getYwMin()), (self.window.getXwMax(), self.window.getYwMin())],  # Bottom edge
-            [(self.window.getXwMax(), self.window.getYwMin()), (self.window.getXwMax(), self.window.getYwMax())],  # Right edge
-            [(self.window.getXwMax(), self.window.getYwMax()), (self.window.getXwMin(), self.window.getYwMax())],  # Top edge
-            [(self.window.getXwMin(), self.window.getYwMax()), (self.window.getXwMin(), self.window.getYwMin())]   # Left edge
+            [(self.window.getXwMin(), self.window.getYwMin()), (self.window.getXwMax(), self.window.getYwMin())],
+            [(self.window.getXwMax(), self.window.getYwMin()), (self.window.getXwMax(), self.window.getYwMax())],
+            [(self.window.getXwMax(), self.window.getYwMax()), (self.window.getXwMin(), self.window.getYwMax())],
+            [(self.window.getXwMin(), self.window.getYwMax()), (self.window.getXwMin(), self.window.getYwMin())]
         ]
-
         for edge in window_edges:
             input_list = output_list
             output_list = []
@@ -59,19 +56,5 @@ class WeilerAtherton:
                     if intersection_point:
                         output_list.append(intersection_point)
                 S = E
-
-        # Convert output list to a Polygon object
         clipped_polygon = Polygon(*output_list)
         return clipped_polygon
-
-# Example usage:
-# window = Window(100, 300, 100, 300)
-# subject_polygon = Polygon(
-#     Point((50, 150)), Point((200, 50)), Point((350, 150)),
-#     Point((350, 300)), Point((250, 300)), Point((200, 250)),
-#     Point((150, 350)), Point((100, 250)), Point((100, 200))
-# )
-
-# weiler_atherton_clip = WeilerAtherton(window)
-# clipped_polygon = weiler_atherton_clip.weiler_atherton(subject_polygon)
-# print("Clipped polygon points:", [p.getPoint() for p in clipped_polygon.getPolygon()])

@@ -368,14 +368,14 @@ class Ui_MainWindow(QMainWindow):
         self.arrow_left.clicked.connect(self.arrowLeftFunction)  # Connect the button to its function
         arrow_layout.addWidget(self.arrow_left, 1, 0)
 
-        # Salvar xml
-        self.save_xml = QPushButton(arrows_container)
-        self.save_xml.setObjectName("save_xml")
-        self.save_xml.setText(".xml")
-        self.save_xml.setMinimumSize(85, 35)
-        self.save_xml.setMaximumSize(300, 35)
-        self.save_xml.clicked.connect(self.xmlFunction)  # Connect the button to its function
-        arrow_layout.addWidget(self.save_xml, 1, 1)
+        # Resetr posição
+        self.reset_position = QPushButton(arrows_container)
+        self.reset_position.setObjectName("reset_position")
+        self.reset_position.setText("Reset")
+        self.reset_position.setMinimumSize(85, 35)
+        self.reset_position.setMaximumSize(300, 35)
+        self.reset_position.clicked.connect(self.resetInitialPosition)  # Connect the button to its function
+        arrow_layout.addWidget(self.reset_position, 1, 1)
 
         self.arrow_down = QPushButton(arrows_container)
         self.arrow_down.setObjectName("arrow_down")
@@ -436,6 +436,10 @@ class Ui_MainWindow(QMainWindow):
         self.actionOpen.setObjectName("actionOpen")
         self.menuOptions.addAction(self.actionOpen)
 
+        self.actionSaveXml = QtWidgets.QAction(MainWindow)
+        self.actionSaveXml.setObjectName("actionSaveXml")
+        self.menuOptions.addAction(self.actionSaveXml)
+
         self.actionExit = QtWidgets.QAction(MainWindow)
         self.actionExit.setObjectName("actionExit")
         self.menuOptions.addAction(self.actionExit)
@@ -445,6 +449,7 @@ class Ui_MainWindow(QMainWindow):
         self.retranslateUi(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
         self.actionOpen.triggered.connect(self.openFile)
+        self.actionSaveXml.triggered.connect(self.xmlFunction)
         self.actionExit.triggered.connect(self.exitProgram)
         conversor = WindowToViewportConversor()
 
@@ -474,9 +479,10 @@ class Ui_MainWindow(QMainWindow):
 
         for polygon in self.worldPolygonsCoordinates:
             weiler = WeilerAtherton(self.main_window)
-            polygon_list = weiler.weiler_atherton(polygon)
-            if ( len(polygon_list.getPolygon()) != 0):
-                self.windowPolygonsCoordinates.append(polygon_list)
+            clipped_polygon = weiler.weiler_atherton(polygon)
+
+            if ( len(clipped_polygon) > 0 and len(clipped_polygon.getPolygon()) > 0):
+                self.windowPolygonsCoordinates.append(clipped_polygon)
 
         conversor = WindowToViewportConversor()
         self.widget.polygons.clear()
@@ -516,9 +522,10 @@ class Ui_MainWindow(QMainWindow):
         MainWindow.setWindowTitle(_translate("MainWindow", "Trabalho de CG"))
         self.erase_button.setText(_translate("MainWindow", "🗑️"))
         self.edit_button.setText(_translate("MainWindow", "📝"))
-        self.save_xml.setText(_translate("MainWindow", ".xml"))
+        self.reset_position.setText(_translate("MainWindow", "🛌"))
         self.menuOptions.setTitle(_translate("MainWindow", "Options"))
         self.actionOpen.setText(_translate("MainWindow", "Open"))
+        self.actionSaveXml.setText(_translate("MainWindow", "Save as XML"))
         self.actionExit.setText(_translate("MainWindow", "Exit"))
         self.button_ponto.setText(_translate("MainWindow", "Point"))
         self.button_linha.setText(_translate("MainWindow", "Line"))
@@ -566,25 +573,25 @@ class Ui_MainWindow(QMainWindow):
         self.main_window = xmlReader.getWindow()
         self.viewport = xmlReader.getViewport()
         self.widget.setViewport(self.viewport)
-        self.worldFilePointsCoordinates = xmlReader.getPontos()
-        self.worldFileLinesCoordinates = xmlReader.getRetas()
-        self.worldFilePolygonsCoordinates = xmlReader.getPoligonos()
+        self.worldPointsCoordinates = xmlReader.getPontos()
+        self.worldLinesCoordinates = xmlReader.getRetas()
+        self.worldPolygonsCoordinates = xmlReader.getPoligonos()
         self.x_min_default = self.main_window.getXwMin()
         self.x_max_default = self.main_window.getXwMax()
         self.y_min_default = self.main_window.getYwMin()
         self.y_max_default = self.main_window.getYwMax()
 
-        for point in self.worldFilePolygonsCoordinates:
+        for point in self.worldPointsCoordinates:
             convertedPoint = conversor.convertToViewport(
                 point, self.main_window, self.viewport)
             self.viewPortPointsCoordinates.append(convertedPoint)
 
-        for line in self.worldFileLinesCoordinates:
+        for line in self.worldLinesCoordinates:
             convertedLine = conversor.convertToViewport(
                 line, self.main_window, self.viewport)
             self.viewPortLinesCoordinates.append(convertedLine)
 
-        for polygon in self.worldFilePolygonsCoordinates:
+        for polygon in self.worldPolygonsCoordinates:
             convertedPolygon = conversor.convertToViewport(
                 polygon, self.main_window, self.viewport)
             self.viewPortPolygonsCoordinates.append(convertedPolygon)
@@ -607,8 +614,11 @@ class Ui_MainWindow(QMainWindow):
 
     def saveXmlFunction(self, points_vector, lines_vector, polygons_vector):
         pathFilename = self.saveFileDialog()
-        xml = XmlWriter(pathFilename)
-        xml.write(points_vector, lines_vector, polygons_vector)
+        try:
+            xml = XmlWriter(pathFilename)
+            xml.write(points_vector, lines_vector, polygons_vector)
+        except TypeError as e:
+            return
         # self.pushButton.hide()
 
     def eraseFunction(self):
@@ -745,10 +755,11 @@ class Ui_MainWindow(QMainWindow):
     def arrowDownFunction(self):
         self.main_window.moveWindow(0, 10)
         self.updateDrawing()
-        
+
     def resetInitialPosition(self):
         self.main_window.reset_position(self.x_min_default, self.y_min_default,
             self.x_max_default, self.y_max_default)
+        self.updateDrawing()
 
     def rotateLeftFunction(self):
         self.main_window.rotate(-45)  # Rotaciona 10 graus para a esquerda

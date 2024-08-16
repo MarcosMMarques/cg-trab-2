@@ -31,8 +31,16 @@ class WindowToViewportConversor:
         XvpMax = viewport.getXvMax()
         YvpMin = viewport.getYvMin()
         YvpMax = viewport.getYvMax()
-        Xwin =  (((Xvp - XvpMin)* (XwMax - XwMin))/(XwMax - XvpMin)) + XwMin
-        Ywin = (((Yvp - YvpMin)* (YwMax - YwMin))/(YwMax - YvpMin)) + YwMin
+    
+        # Handle cases where XvpMin == XvpMax or YvpMin == YvpMax to avoid division by zero
+        if XvpMin == XvpMax:
+            raise ValueError("Viewport XvpMin and XvpMax cannot be equal.")
+        if YvpMin == YvpMax:
+            raise ValueError("Viewport YvpMin and YvpMax cannot be equal.")
+        
+        Xwin = ((Xvp - XvpMin) * (XwMax - XwMin) / (XvpMax - XvpMin)) + XwMin
+        Ywin = ((Yvp - YvpMin) * (YwMax - YwMin) / (YvpMax - YvpMin)) + YwMin
+        
         return (Xwin, Ywin)
 
     def convertToViewport(self, element: Union[Point, Line, Polygon], window: Window, viewport: Viewport, reverse = False):
@@ -43,7 +51,7 @@ class WindowToViewportConversor:
             else:
                 point = self.__transform(
                     element.getPoint(), window, viewport)
-        return Point(point)
+            return Point(point)
 
         if (type(element) == Line):
             line = []
