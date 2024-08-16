@@ -31,7 +31,6 @@ class Geometry:
     def rotate(self, window, angle, x, y):
         center = window.getCenter()
         angle_rad = np.radians(angle)  # Convert angle to radians
-        print("Radianos: ", angle_rad)
         return self.apply_rotation(angle_rad, center[0], center[1], x, y)
 
 

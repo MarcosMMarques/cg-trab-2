@@ -72,7 +72,3 @@ class CohenSutherland:
                     code2 = self.compute_code(x2, y2)
 
         return accept
-
-    # Exemplo de uso
-    #cohen_sutherland_clip(5, 5, 150, 100)
-    #cohen_sutherland_clip(50, 50, 250, 250)

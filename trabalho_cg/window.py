@@ -76,7 +76,6 @@ class Window:
         # Atualizar as coordenadas da window após a translação
         self.xwMin, self.xwMax = np.min(new_coords[0, :]), np.max(new_coords[0, :])
         self.ywMin, self.ywMax = np.min(new_coords[1, :]), np.max(new_coords[1, :])
-        # print("Novas coordenadas mundo: ", self.main_window.getXwMin(), self.main_window.getXwMax(), self.main_window.getYwMin(), self.main_window.getYwMax())
 
     def reset_position(self, xMin, yMin, xMax, yMax):
         self.setXwMax(xMax)

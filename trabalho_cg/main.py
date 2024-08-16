@@ -12,8 +12,6 @@ from clipping.cohen import *
 from clipping.weiler import *
 import numpy as np
 
-# TODO : XmlReader, Rotação e ajuste de coordenadas
-
 class Ui_MainWindow(QMainWindow):
     def __init__(self, MainWindow) -> None:
         super().__init__(MainWindow)
@@ -305,10 +303,6 @@ class Ui_MainWindow(QMainWindow):
         # Set the content widget of the scroll area
         self.track_figures_area.setWidget(self.track_figures_content)
 
-        # Spacer to fill the empty space
-        # spacer = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
-        # controls_layout.addItem(spacer)
-
         self.form_widget = QWidget()
 
         # Adding new buttons
@@ -576,6 +570,7 @@ class Ui_MainWindow(QMainWindow):
         self.worldPointsCoordinates = xmlReader.getPontos()
         self.worldLinesCoordinates = xmlReader.getRetas()
         self.worldPolygonsCoordinates = xmlReader.getPoligonos()
+        self.populateTable()
         self.x_min_default = self.main_window.getXwMin()
         self.x_max_default = self.main_window.getXwMax()
         self.y_min_default = self.main_window.getYwMin()
@@ -619,7 +614,6 @@ class Ui_MainWindow(QMainWindow):
             xml.write(points_vector, lines_vector, polygons_vector)
         except TypeError as e:
             return
-        # self.pushButton.hide()
 
     def eraseFunction(self):
         if self.selected_row == -1: return
